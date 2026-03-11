@@ -22,6 +22,7 @@ This example can be used as a start point to write a low power consumption seism
    - [Assembly](#assembly)
 - [Building and flashing](#building-and-flashing)
 - [How it works](#how-it-works)
+- [Alert levels and thresholds](#alert-levels-and-thresholds)
 - [Libraries used](#libraries-used)
 - [Source Code](#source-code)
    - [Seismic Sensor code for RAK4631 using the RAK-nRF52 BSP for Arduino](#seismic-sensor-code-for-rak4631-using-the-rak-nrf52-bsp-for-arduino)
@@ -113,6 +114,20 @@ There are 4 different interrupt events:
 After sending the data packet in (2), a timer is started to send a second packet with the alert flags cleared.
 
 The frequent send timer is just sending a small packet to signal the LoRaWAN server that the sensor is still alive. This packet contains the battery level and, if assembled, the temperature and humidity values measured with the RAK1901.
+
+## Alert levels and thresholds
+
+The following are defined in the firmware and the Omron D7S sensor (see [D7S datasheet](https://components.omron.com/us-en/datasheet_pdf/A252-E1.pdf) for sensor-level details).
+
+| Alert / setting | Source | Meaning |
+|-----------------|--------|--------|
+| **Earthquake start** | D7S INT2 (falling edge) | D7S has detected earthquake; analysis started. |
+| **Earthquake end** | D7S INT2 (rising edge) | D7S has finished analysis; SI and PGA values are available. |
+| **Shutoff alert** | D7S INT1, `isInShutoff()` | D7S shutoff condition met: **SI > 5** (Omron definition). Can be used to trigger machinery shutdown. |
+| **Collapse alert** | D7S INT1, `isInCollapse()` | D7S collapse condition met: sensor tilt/position change detected (e.g. structure collapse). |
+| **Sensitivity (AT+SENS / downlink)** | Firmware + D7S `setThreshold()` | **0 = high threshold** (less sensitive, fewer triggers). **1 = low threshold** (more sensitive). Exact SI/PGA levels for H vs L are defined inside the D7S; see Omron datasheet. |
+
+Event codes used in the firmware (`check_event_rak12027`): **1** = Collapse only, **2** = Shutoff only, **3** = Collapse and Shutoff, **4** = Earthquake start, **5** = Earthquake end. INT1 fires for Collapse/Shutoff; INT2 fires for earthquake start/end.
 
 # Libraries used
 
