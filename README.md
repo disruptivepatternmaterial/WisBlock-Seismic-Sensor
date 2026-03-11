@@ -19,6 +19,7 @@ This example can be used as a start point to write a low power consumption seism
 
 # Content
 - [RAK products used in this project](#rak-products-used-in-this-project)
+   - [RAK19003 base board (two slots)](#rak19003-base-board-two-slots)
    - [Assembly](#assembly)
 - [Building and flashing](#building-and-flashing)
 - [How it works](#how-it-works)
@@ -35,7 +36,20 @@ This example can be used as a start point to write a low power consumption seism
 
 This project uses the [_**RAK19007**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK19007/Overview) Base Board, the [_**RAK12027**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12027/Overview) Seismic Sensor and optional the [_**RAK1901**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK1901/Overview) Temperature and Humidity Sensor.    
 In case the firmware is built with the RAK-nRF52 Arduino BSP, it uses the [_**RAK4631**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631/Overview) Core Module.    
-In case the RAK RUI3 API is used for the firmware, it uses the [_**RAK4631-R**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631-R/Overview) Core Module.    
+In case the RAK RUI3 API is used for the firmware, it uses the [_**RAK4631-R**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631-R/Overview) Core Module.
+
+### RAK19003 base board (two slots)
+
+The [_**RAK19003**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK19003/Overview) WisBlock Mini Base has **two sensor slots only: C and D** (Slot C = 10 mm modules, Slot D = up to 23 mm). **Each slot holds exactly one module.** If you use RAK19003 with the RAK12027 in **Slot C** (e.g. `RAK12027_SLOT=2` in `platformio.ini`), **Slot D is the only free slot** — one module only. You cannot put both RAK12002 and RAK1901 on the board; choose one.
+
+| Module   | Works on RAK19003 with RAK12027 in Slot C? | Fits in free slot D? | Firmware ready? |
+|----------|---------------------------------------------|----------------------|-----------------|
+| [RAK12002](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12002/Overview) (RTC) | Yes | Yes (if you choose this one) | Yes |
+| [RAK1901](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK1901/Overview) (temp/humidity) | Yes | Yes (if you choose this one) | Yes |
+| [RAK12500](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12500/Overview) (GNSS) | No | No — Slot C only on RAK19003; C is occupied | No (no driver) |
+| [RAK12501](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12501/Overview) (GNSS, Quectel L76K) | Yes | Yes (if you choose this one) | No — driver not yet in this repo |
+
+**Pick one:** Install **either** RAK12002, **or** RAK1901, **or** RAK12501 in Slot D. RAK12500 and RAK1910 are Slot C only on RAK19003, so they conflict with RAK12027. RAK12501 is the GNSS module that fits Slot D; this firmware does not yet include a RAK12501 driver (LPP channel 10 for GPS exists; init/read code would need to be added).    
 
 ## Assembly
 
