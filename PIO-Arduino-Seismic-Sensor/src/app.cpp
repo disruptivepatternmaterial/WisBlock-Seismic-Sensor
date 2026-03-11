@@ -477,27 +477,35 @@ void lora_data_handler(void)
 		{
 			g_task_event_type &= N_LORA_DATA;
 			MYLOG("APP", "Received package over LoRa");
-			// Check if uplink was a send frequency change command
-			if ((g_last_fport == 3) && (g_rx_data_len == 6))
+			// FPort 3: config downlinks (threshold or send interval)
+			if (g_last_fport == 3)
 			{
-				if (g_rx_lora_data[0] == 0xAA)
+				// Set seismic threshold: 4 bytes AA 55 02 [00=high, 01=low]
+				if (g_rx_data_len >= 4 && g_rx_lora_data[0] == 0xAA && g_rx_lora_data[1] == 0x55 && g_rx_lora_data[2] == 0x02)
 				{
-					if (g_rx_lora_data[1] == 0x55)
+					threshold_level = (g_rx_lora_data[3] != 0) ? 1 : 0;
+					save_threshold_settings(threshold_level);
+					threshold_rak12027(threshold_level);
+					MYLOG("APP", "Received new threshold %s", threshold_level ? "low" : "high");
+				}
+				// Set send interval: 6 bytes AA 55 [4-byte big-endian seconds]
+				else if (g_rx_data_len == 6)
+				{
+					if (g_rx_lora_data[0] == 0xAA)
 					{
-						uint32_t new_send_frequency = 0;
-						new_send_frequency |= (uint32_t)(g_rx_lora_data[2]) << 24;
-						new_send_frequency |= (uint32_t)(g_rx_lora_data[3]) << 16;
-						new_send_frequency |= (uint32_t)(g_rx_lora_data[4]) << 8;
-						new_send_frequency |= (uint32_t)(g_rx_lora_data[5]);
+						if (g_rx_lora_data[1] == 0x55)
+						{
+							uint32_t new_send_frequency = 0;
+							new_send_frequency |= (uint32_t)(g_rx_lora_data[2]) << 24;
+							new_send_frequency |= (uint32_t)(g_rx_lora_data[3]) << 16;
+							new_send_frequency |= (uint32_t)(g_rx_lora_data[4]) << 8;
+							new_send_frequency |= (uint32_t)(g_rx_lora_data[5]);
 
-						MYLOG("APP", "Received new send frequency %ld s\n", new_send_frequency);
-						// Save the new send frequency
-						g_lorawan_settings.send_repeat_time = new_send_frequency * 1000;
-
-						// Set the timer to the new send frequency
-						api_timer_restart(g_lorawan_settings.send_repeat_time);
-						// Save the new send frequency
-						save_settings();
+							MYLOG("APP", "Received new send frequency %ld s\n", new_send_frequency);
+							g_lorawan_settings.send_repeat_time = new_send_frequency * 1000;
+							api_timer_restart(g_lorawan_settings.send_repeat_time);
+							save_settings();
+						}
 					}
 				}
 			}
