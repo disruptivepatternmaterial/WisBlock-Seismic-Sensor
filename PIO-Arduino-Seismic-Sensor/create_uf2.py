@@ -1,29 +1,24 @@
-import sys
+import os
 import struct
 
 Import("env")
 
 # Parse input and create UF2 file
 def create_uf2(source, target, env):
-    # source_hex = target[0].get_abspath()
-    source_hex = target[0].get_string(False)
-    source_hex = '.\\'+source_hex
+    source_hex = target[0].get_abspath()
     print("#########################################################")
-    print("Create UF2 from "+source_hex)
+    print("Create UF2 from " + source_hex)
     print("#########################################################")
-    # print("Source: " + source_hex)
-    target = source_hex.replace(".hex", "")
-    target = target + ".uf2"
-    # print("Target: " + target)
+    target_uf2 = os.path.splitext(source_hex)[0] + ".uf2"
 
     with open(source_hex, mode='rb') as f:
         inpbuf = f.read()
 
     outbuf = convert_from_hex_to_uf2(inpbuf.decode("utf-8"))
 
-    write_file(target, outbuf)
+    write_file(target_uf2, outbuf)
     print("#########################################################")
-    print(target + " is ready to flash to target device")
+    print(target_uf2 + " is ready to flash to target device")
     print("#########################################################")
 
 

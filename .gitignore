@@ -2,3 +2,5 @@ PIO-Arduino-Seismic-Sensor/Generated
 RUI3-Seismic-Sensor/Build
 PIO-Arduino-Seismic-Sensor/Generated/*
 RUI3-Seismic-Sensor/Build/*
+# TTN keys (do not commit; edit with your keys)
+PIO-Arduino-Seismic-Sensor/src/ttn_keys_private.h

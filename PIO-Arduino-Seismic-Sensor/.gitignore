@@ -5,3 +5,5 @@
 .vscode/ipch
 Generated
 Generated/*
+# TTN keys (copy from ttn_keys_private.example.h and add real keys; do not commit)
+src/ttn_keys_private.h

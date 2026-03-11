@@ -20,12 +20,13 @@ This example can be used as a start point to write a low power consumption seism
 # Content
 - [RAK products used in this project](#rak-products-used-in-this-project)
    - [Assembly](#assembly)
+- [Building and flashing](#building-and-flashing)
 - [How it works](#how-it-works)
 - [Libraries used](#libraries-used)
 - [Source Code](#source-code)
    - [Seismic Sensor code for RAK4631 using the RAK-nRF52 BSP for Arduino](#seismic-sensor-code-for-rak4631-using-the-rak-nrf52-bsp-for-arduino)
    - [Seismic Sensor code for RAK4631-R and RAK3172 using the RAK RUI3 API](#seismic-sensor-code-for-rak4631-r-and-rak3172-using-the-rak-rui3-api)
-   - [Setup of the RAK12027 Seismic Sensor](#setup_of_the_rak12027_seismic_sensor)
+   - [Setup of the RAK12027 Seismic Sensor](#setup-of-the-rak12027-seismic-sensor)
 - [Data packet format](#data-packet-format)
 - [Example for a visualization and alert message](#example-for-a-visualization-and-alert-message)
 
@@ -58,6 +59,40 @@ If using a larger battery, use stand-offs and a battery carrier like the one fro
 ![Assembly](./assets/large-battery-carrier.jpg)
 ![Assembly](./assets/large-battery-mount.jpg)
 
+# Building and flashing
+
+This project is built with **PlatformIO** for the RAK4631 (recommended). The RUI3 version for RAK4631-R / RAK3172 uses the Arduino IDE.
+
+## PlatformIO (RAK4631)
+
+**Prerequisites:** [PlatformIO](https://platformio.org/) (CLI or VS Code extension).
+
+1. **Build**
+   - From the repo root: `cd PIO-Arduino-Seismic-Sensor && pio run`
+   - Default environment is `rak4631-debug`. For a release build: `pio run -e rak4631-release`
+   - Output: `.hex` and `.uf2` in `PIO-Arduino-Seismic-Sensor/Generated/` (e.g. `WisBlock_SEISMIC_V1.1.1_YYYY.MM.DD.HH.MM.SS.hex` / `.uf2`).
+
+2. **Flash (UF2, no J-Link)**
+   - Double-tap the **reset** button on the RAK4631 to enter the bootloader. The device appears as a USB drive.
+   - Copy the `.uf2` file from `Generated/` onto that drive. The device reboots with the new firmware.
+
+3. **Flash (J-Link, optional)**  
+   - Connect a J-Link to the RAK4631. Run: `pio run -t upload` (set `upload_port` in `platformio.ini` if needed).
+
+**TTN / The Things Network:** Region **US915**, **OTAA**, **Class A**, and LoRaWAN 1.0.2 match the firmware. If the application uses **United States 902–928 MHz, FSB 2**, set the device subband to **2** so uplink/downlink use the same channels: connect over serial and run **`AT+MASK=2`** (WisBlock-API saves automatically). Then in TTN use **Reset session and MAC state** if the device had previously tried to join with a different subband. **Default config:** On first boot (or when the device is not already set to US915 + subband 2), the firmware applies TTN-friendly defaults (US915, FSB 2, OTAA, Class A, TXP 10, unconfirmed, auto-join, 5 join trials, 5 min send interval) **and** the keys from **`src/ttn_keys_private.h`**, then saves. Edit `ttn_keys_private.h` with your DevEUI/AppEUI/AppKey from the TTN console; the file is in `.gitignore` so it is not committed. Use `ttn_keys_private.example.h` as a template if you need to create it.
+
+**TTN downlink — change reporting interval:** The device listens for downlinks on **FPort 3**. To change the periodic send interval over the air, send a **6-byte** payload (hex): **`AA 55`** (magic) followed by a **4-byte big-endian** value = interval in **seconds**. Examples: 1 min = `AA550000003C`, 5 min = `AA550000012C`, 10 min = `AA5500000258`, 1 hour = `AA5500000E10`. In TTN Console go to your device → **Downlink** → set FPort to **3**, payload type **Hex**, enter one of these strings → Send. The device applies the new interval, restarts its timer, and saves to flash. This is the only downlink config the firmware supports; other settings (DR, TXP, etc.) are not changed by application downlinks.
+
+Use the **RAK4631** core (not RAK4631-R) for this PlatformIO firmware. RAK4631-R uses the RUI3 code in `RUI3-Seismic-Sensor/`.
+
+## RUI3 (RAK4631-R / RAK3172)
+
+Open `RUI3-Seismic-Sensor/RUI3-Seismic-Sensor.ino` in the Arduino IDE, install the RAK RUI3 board support, select the correct board (e.g. RAK3172 or RAK4631-R), set the sensor slot in `RAK12027_seismic.cpp` (`RAK12027_SLOT` `'A'`–`'F'`), then Build and Upload.
+
+## Pre-built binaries
+
+The files in **Flashable Files/** are example pre-built binaries (from 2023). For the latest firmware, build from source as above.
+
 # How it works
 
 Both the RUI3 and the Arduino code are based on interrupts and timers. After joining the LoRaWAN network, the MCU goes into sleep mode until it    
@@ -81,13 +116,18 @@ The frequent send timer is just sending a small packet to signal the LoRaWAN ser
 
 # Libraries used
 
-Both the Arduino and the RUI3 code use the [_**D7S library**_](https://github.com/alessandro1105/D7S_Arduino_Library) provided by Alessandro Pasqualini. I couldn't find the library in the Arduino Library Manager, so you have to download the repo as a ZIP file and install it manually.
+The **PlatformIO** build (RAK4631) uses these libraries from `platformio.ini`:
 
-For the encoding of the data packets the [_**CayenneLPP library**_](https://github.com/ElectronicCats/CayenneLPP) is used.    
-For the RAK1901 sensor the [_**SparkFun SHTC3 Humidity and Temperature Sensor Library**_](https://github.com/sparkfun/SparkFun_SHTC3_Arduino_Library) is used.    
-These two libraries can be installed with the Arduino Library Manager.
+- [_**RAK12027-D7S**_](https://github.com/beegee-tokyo/RAK12027-D7S) (beegee-tokyo) for the Omron D7S seismic sensor
+- [_**CayenneLPP**_](https://github.com/sabas1080/CayenneLPP) (sabas1080) for payload encoding
+- [_**WisBlock-API-V2**_](https://github.com/beegee-tokyo/WisBlock-API-V2) (beegee-tokyo)
+- [_**SparkFun SHTC3**_](https://github.com/sparkfun/SparkFun_SHTC3_Arduino_Library) for the RAK1901 temperature/humidity sensor
 
-The Arduino version uses in addition the [_**WisBlock-API-V2**_](https://github.com/beegee-tokyo/WisBlock-API-V2), which can be installed with the Arduino Library Manager as well.
+No manual install is needed; `pio run` installs them via `lib_deps`.
+
+The `PIO-Arduino-Seismic-Sensor/lib/` folder may contain optional sensor libraries (e.g. RAK12039 dust sensor) that are not used by the seismic app; they can be left in place for future use.
+
+For the **RUI3** (Arduino IDE) project, install **RAK12027-D7S** and **CayenneLPP** from the Arduino Library Manager (search for RAK12027-D7S and CayenneLPP), plus the RAK RUI3 board support.
 
 ## Source Code
 
@@ -96,14 +136,14 @@ The Arduino version uses in addition the [_**WisBlock-API-V2**_](https://github.
 The Arduino code is based on the [_**WisBlock-API-V2**_](https://github.com/beegee-tokyo/WisBlock-API-V2), an event driven framework that handles all communication tasks in the background and just waits for a timer or external interrupt to wake up.    
 The provided code is for PlatformIO, but can easily be changed to work in the Arduino IDE.
 
-Depending on the Sensor Slot used, the D7S interrupts INT1 and INT2 need to be assigned to the correct GPIO's. This can be done in the platformio.ini files with the **`build_flags`** option:
+Depending on the Sensor Slot used, the D7S interrupts INT1 and INT2 need to be assigned to the correct GPIO's. In PlatformIO this is set in **`platformio.ini`** with the **`build_flags`** option (numeric slot index):
 
 ```
-build_flags = 
-	-DRAK12027_SLOT=A ; A = Slot A, B = Slot B, C = Slot C, D = Slot D, E = Slot E, F = Slot F
+build_flags =
+	-DRAK12027_SLOT=2   ; 0 = Slot A, 1 = Slot B, 2 = Slot C, 3 = Slot D, 4 = Slot E, 5 = Slot F
 ```
 
-If using Arduino IDE, the correct assignment has to be done in the **`RAK12027_seismic.cpp`** file.
+If using Arduino IDE for this codebase, set the slot in **`RAK12027_seismic.cpp`** (see RUI3 section below).
 
 The Arduino based firmware has an RUI3 compatible AT command interface, the available AT commands can be found in the [_**AT Command Manual**_](https://docs.rakwireless.com/RUI3/Serial-Operating-Modes/AT-Command-Manual/)
 
@@ -113,13 +153,13 @@ Not all RUI3 AT commands are supported because the used LoRaWAN library is diffe
 ## Seismic Sensor code for RAK4631-R and RAK3172 using the RAK RUI3 API
 
 The RUI3 based code is working on the RAK4631-R and RAK3172 modules without any change in the code.    
-The assignment of the D7S interrupts INT1 and INT2 need to be assigned in the **`RAK12027_seismic.cpp`** file.
+The assignment of the D7S interrupts INT1 and INT2 is done in **`RAK12027_seismic.cpp`** by setting `RAK12027_SLOT` to `'A'`, `'B'`, `'C'`, `'D'`, `'E'`, or `'F'`.
 
 ## Setup of the RAK12027 Seismic Sensor
 
 The functions to setup the sensor and handle the sensor interrupts are nearly the same for Arduino and RUI3. The main difference is how the interrupt handlers wake up the MCU to check the source of the interrupts.
 
-In the **`init_rak120271()** function the sensor is initialized and calibrated. The calibration is necessary, as the sensor will determine his horizontal position. This is required for both the earthquake detection and the collapse alert.    
+In the **`init_rak12027()`** function the sensor is initialized and calibrated. The calibration is necessary, as the sensor will determine his horizontal position. This is required for both the earthquake detection and the collapse alert.    
 This function assigns as well the interrupt handlers for the two interrupt sources from the D7S sensor.    
 
 For Arduino, the two interrupt handlers wake up the loop by releasing a semaphore with the **`api_wake_loop()`** call. They set as well the reason for the wakeup, so that it can be handled in the application.
@@ -220,7 +260,7 @@ The packet sent out displayed as hex values looks like this:
 | 4 | Channel ID 44 for SI value | 0x2c | |
 | 5 | Channel type for analog value | 0x02 | |
 | 6, 7 | SI value | 0x00 0xab | 1.71 = 0.171 m/s|
-| 8 | Channel ID 44 for PGA value | 0x2d | | 
+| 8 | Channel ID 45 for PGA value | 0x2d | | 
 | 9 | Channel type for analog value | 0x02 | | 
 | 10, 11 | PGA value | 0x19 0x28 | 64.4  = 6.44 m/s^2 |
 | 12 | Channel ID 46 for Shutoff event | 0x2e | |

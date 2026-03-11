@@ -142,28 +142,21 @@ bool init_rak12027(void)
 	// Read threshold settings from Flash
 	read_threshold_settings();
 
-	// start D7S connection
+	// Give D7S time to power up after MCU boot (required on some bases e.g. RAK19003)
+	delay(2000);
+
+	// start D7S connection (assigns I2C port; library begin() has inverted ready logic)
 	D7S.begin();
 
-	// wait until the D7S is ready
-	time_t start_wait_time = millis();
-	while (!D7S.isReady())
-	{
-		if ((millis() - start_wait_time) > 10000)
-		{
-			MYLOG("SEIS", "Timeout waiting for D7S");
-			return false;
-		}
-		delay(500);
-	}
-
+	// Do not wait for NORMAL_MODE here: D7S may power up in another state. Run calibration
+	// (initialize) first; it transitions the device to NORMAL_MODE.
 	//--- SETTINGS ---
 	// setting the D7S to switch the axis at inizialization time
 	MYLOG("SEIS", "Setting D7S sensor to switch axis at inizialization time.");
 	D7S.setAxis(SWITCH_AT_INSTALLATION);
 
 	/*********************************************************************/
-	/** Calling calibration, this should be done from AT command instead */
+	/** Calibration (initialize): required so D7S enters NORMAL_MODE */
 	/*********************************************************************/
 	if (!calib_rak12027())
 	{

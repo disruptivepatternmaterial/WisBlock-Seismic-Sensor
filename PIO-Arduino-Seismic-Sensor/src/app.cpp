@@ -95,12 +95,44 @@ bool init_app(void)
 	bool init_result = true;
 	MYLOG("APP", "init_app");
 
+	// Apply TTN US915 FSB2 defaults when device is not already configured that way
+	// (e.g. first boot after flash, or factory defaults). Saves having to send AT commands.
+	if (g_lorawan_settings.lora_region != 5 || g_lorawan_settings.subband_channels != 2)
+	{
+		g_lorawan_settings.lora_region = 5;           // US915
+		g_lorawan_settings.subband_channels = 2;     // FSB 2 for TTN
+		g_lorawan_settings.otaa_enabled = true;
+		g_lorawan_settings.lora_class = 0;            // Class A
+		g_lorawan_settings.tx_power = 10;
+		g_lorawan_settings.confirmed_msg_enabled = LMH_UNCONFIRMED_MSG;
+		g_lorawan_settings.join_trials = 5;
+		g_lorawan_settings.auto_join = true;
+		g_lorawan_settings.send_repeat_time = (g_lorawan_settings.send_repeat_time == 0) ? 300000U : g_lorawan_settings.send_repeat_time; // 5 min if was 0
+		#include "ttn_keys_private.h"
+		memcpy(g_lorawan_settings.node_device_eui, default_deveui, 8);
+		memcpy(g_lorawan_settings.node_app_eui, default_appeui, 8);
+		memcpy(g_lorawan_settings.node_app_key, default_appkey, 16);
+		save_settings();
+		MYLOG("APP", "Applied default TTN US915 FSB2 config");
+	}
+
 	pinMode(WB_IO2, OUTPUT);
-	digitalWrite(WB_IO2, LOW);
+	digitalWrite(WB_IO2, HIGH);  // Enable 3V3_S for sensor slot (required on RAK19003/RAK19007)
 
 	// Start the I2C bus
 	Wire.begin();
 	Wire.setClock(400000);
+
+#if MY_DEBUG > 0
+	// I2C scan: see what devices respond (helps debug RAK12027 on RAK19003)
+	MYLOG("APP", "I2C scan (0x08-0x77):");
+	for (uint8_t addr = 0x08; addr <= 0x77; addr++) {
+		Wire.beginTransmission(addr);
+		if (Wire.endTransmission() == 0) {
+			MYLOG("APP", "  found 0x%02X", addr);
+		}
+	}
+#endif
 
 	// Initialize Seismic module
 	MYLOG("APP", "Initialize RAK12027");
@@ -196,9 +228,20 @@ void app_event_handler(void)
 			api_timer_stop();
 			delayed_sending.stop();
 
-			// // Request packet sending
-			// g_task_event_type = g_task_event_type | STATUS;
-
+			// Send earthquake start immediately (battery + earthquake_active true)
+			g_solution_data.addVoltage(LPP_CHANNEL_BATT, read_batt() / 1000.0);
+			if (has_rak1901)
+			{
+				read_rak1901();
+			}
+			if (g_lpwan_has_joined && g_lorawan_settings.lorawan_enable)
+			{
+				if (send_lora_packet(g_solution_data.getBuffer(), g_solution_data.getSize()) == LMH_SUCCESS)
+				{
+					MYLOG("APP", "Packet enqueued (earthquake start)");
+				}
+			}
+			g_solution_data.reset();
 			break;
 		case 5:
 			// Earthquake end
@@ -212,15 +255,28 @@ void app_event_handler(void)
 			// Reset flags
 			shutoff_alert = false;
 			collapse_alert = false;
+
+			// Send earthquake end packet immediately (payload already has event, SI, PGA, shutoff, collapse)
+			g_solution_data.addVoltage(LPP_CHANNEL_BATT, read_batt() / 1000.0);
+			if (has_rak1901)
+			{
+				read_rak1901();
+			}
+			if (g_lpwan_has_joined && g_lorawan_settings.lorawan_enable)
+			{
+				if (send_lora_packet(g_solution_data.getBuffer(), g_solution_data.getSize()) == LMH_SUCCESS)
+				{
+					MYLOG("APP", "Packet enqueued (earthquake end)");
+				}
+			}
+			g_solution_data.reset();
+			earthquake_end = false;
+
 			// Send another packet in 1 minute
 			delayed_sending.setPeriod(60000);
 			delayed_sending.start();
 			// Restart frequent sending
 			api_timer_restart(g_lorawan_settings.send_repeat_time);
-
-			// Request packet sending
-			g_task_event_type = g_task_event_type | STATUS;
-
 			break;
 		default:
 			// False alert
