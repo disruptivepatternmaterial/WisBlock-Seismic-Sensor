@@ -17,3 +17,22 @@ The [_**RAK19003**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RA
 | [RAK12501](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12501/Overview) (GNSS, Quectel L76K) | Yes | Yes (if you choose this one) | No — driver not yet in this repo |
 
 **Pick one:** Install **either** RAK12002, **or** RAK1901, **or** RAK12501 in Slot D. RAK12500 and RAK1910 are Slot C only on RAK19003, so they conflict with RAK12027. RAK12501 is the GNSS module that fits Slot D; this firmware does not yet include a RAK12501 driver (LPP channel 10 for GPS exists; init/read code would need to be added).
+
+---
+
+## Downlink (config over the air)
+
+The device listens for downlinks on **FPort 3**. Two commands are supported. In TTN Console go to your device → **Downlink** → FPort **3**, payload type **Hex**, enter the payload → Send. The device applies the change and persists it.
+
+| Command | Payload (hex) | Meaning |
+|---------|----------------|---------|
+| **Set reporting interval** | `AA 55` + 4-byte big-endian interval in **seconds** | How often the device sends the "I am alive" packet. |
+| **Set seismic threshold** | `AA 55 02 00` (high) or `AA 55 02 01` (low) | High = less sensitive, fewer triggers. Low = more sensitive. Same as AT+SENS. |
+
+**Reporting interval examples:**  
+1 min = `AA550000003C` · 5 min = `AA550000012C` · 10 min = `AA5500000258` · 1 hour = `AA5500000E10`
+
+**Threshold examples:**  
+High sensitivity threshold = `AA550200` · Low sensitivity threshold = `AA550201`
+
+Other LoRaWAN settings (DR, TXP, etc.) are not changed by these downlinks.
