@@ -5,6 +5,18 @@ This fork adds **RAK19003-specific** notes below. For full documentation (assemb
 
 ---
 
+## TTN keys and LoRaWAN defaults
+
+**Private keys (OTAA):** Edit `PIO-Arduino-Seismic-Sensor/src/ttn_keys_private.h` with your DevEUI, AppEUI, and AppKey from the TTN console. That file is in `.gitignore` and is not committed. If it doesn’t exist, copy from `ttn_keys_private.example.h` and replace the placeholder arrays (`default_deveui`, `default_appeui`, `default_appkey`) with your device’s values (MSB first, as in TTN).
+
+**First-boot defaults:** When the device is not already set to US915 + subband 2, the firmware applies and saves: **US915**, **FSB 2** (subband 2), **OTAA**, **Class A**, **TXP 10**, **unconfirmed**, **auto-join**, **5 join trials**, **5 min** send interval, and the keys from `ttn_keys_private.h`. So after flashing, the device will join TTN with those keys without AT commands.
+
+**Subband:** For TTN United States 902–928 MHz with FSB 2, the firmware sets subband 2 so uplink/downlink use the same channels. If the device previously joined with a different subband, in TTN use **Reset session and MAC state** for the device after it joins with the new config.
+
+**Changing settings over serial:** You can still use AT commands (e.g. `AT+MASK=2` for subband 2); WisBlock-API saves after changes.
+
+---
+
 ## RAK19003 base board (two slots)
 
 The [_**RAK19003**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK19003/Overview) WisBlock Mini Base has **two sensor slots only: C and D** (Slot C = 10 mm modules, Slot D = up to 23 mm). **Each slot holds exactly one module.** If you use RAK19003 with the RAK12027 in **Slot C** (e.g. `RAK12027_SLOT=2` in `platformio.ini`), **Slot D is the only free slot** — one module only. You cannot put both RAK12002 and RAK1901 on the board; choose one.
