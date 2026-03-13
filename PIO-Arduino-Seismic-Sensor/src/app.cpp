@@ -97,9 +97,10 @@ bool init_app(void)
 
 	// Apply TTN US915 FSB2 defaults when device is not already configured that way
 	// (e.g. first boot after flash, or factory defaults). Saves having to send AT commands.
-	if (g_lorawan_settings.lora_region != 5 || g_lorawan_settings.subband_channels != 2)
+	// WisBlock/SX126x: lora_region 5 = EU868, 8 = US915. We must use 8 for US915.
+	if (g_lorawan_settings.lora_region != 8 || g_lorawan_settings.subband_channels != 2)
 	{
-		g_lorawan_settings.lora_region = 5;           // US915
+		g_lorawan_settings.lora_region = 8;           // US915 (LORAMAC_REGION_US915)
 		g_lorawan_settings.subband_channels = 2;     // FSB 2 for TTN
 		g_lorawan_settings.otaa_enabled = true;
 		g_lorawan_settings.lora_class = 0;            // Class A
