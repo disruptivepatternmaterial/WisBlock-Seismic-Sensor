@@ -48,3 +48,17 @@ The device listens for downlinks on **FPort 3**. Two commands are supported. In 
 High sensitivity threshold = `AA550200` · Low sensitivity threshold = `AA550201`
 
 Other LoRaWAN settings (DR, TXP, etc.) are not changed by these downlinks.
+
+---
+
+## Related repositories (woods deployment ecosystem)
+
+This RAK WisBlock seismic node is part of a multi-fleet deployment at a hike-in woods site. The cross-cutting docs and ops live in sibling repos:
+
+- [`forest-weather-machines`](https://github.com/disruptivepatternmaterial/forest-weather-machines) — LoRaWAN gateway / The Things Stack ops, Helium config, Node-RED + TimescaleDB + Grafana pipeline, Home Assistant dashboards. Seismic uplinks land here.
+- [`particle-devices`](https://github.com/disruptivepatternmaterial/particle-devices) — Particle-platform side of the deployment (Tachyon trailcam, Muon weather station, Boron BRN404X). Same site, same backend.
+- [`SN50v3`](https://github.com/disruptivepatternmaterial/SN50v3) — Dragino LoRaWAN sensor firmware (fork) in the same gateway coverage.
+
+Full system flowchart: [`particle-devices/docs/ECOSYSTEM.md`](https://github.com/disruptivepatternmaterial/particle-devices/blob/main/docs/ECOSYSTEM.md).
+
+This repo remains a fork of [beegee-tokyo/WisBlock-Seismic-Sensor](https://github.com/beegee-tokyo/WisBlock-Seismic-Sensor) so that upstream releases can be rebased in.
