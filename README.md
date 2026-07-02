@@ -23,7 +23,7 @@ The [_**RAK19003**_](https://docs.rakwireless.com/Product-Categories/WisBlock/RA
 
 | Module   | Works on RAK19003 with RAK12027 in Slot C? | Fits in free slot D? | Firmware ready? |
 |----------|---------------------------------------------|----------------------|-----------------|
-| [RAK12002](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12002/Overview) (RTC) | Yes | Yes (if you choose this one) | Yes |
+| [RAK12002](https://store.rakwireless.com/products/rtc-module-rak12002) (RTC, Micro Crystal RV-3028-C7 — [docs](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12002/Overview)) | Yes | Yes (if you choose this one) | Yes |
 | [RAK1901](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK1901/Overview) (temp/humidity) | Yes | Yes (if you choose this one) | Yes |
 | [RAK12500](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12500/Overview) (GNSS) | No | No — Slot C only on RAK19003; C is occupied | No (no driver) |
 | [RAK12501](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK12501/Overview) (GNSS, Quectel L76K) | Yes | Yes (if you choose this one) | No — driver not yet in this repo |
